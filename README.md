@@ -15,3 +15,12 @@ sudo cp 99-rapl-permissions.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
+
+### rapl_tdp
+```
+# modo monitor, exibe continuamente
+./rapl_tdp -m
+
+# exibe uma vez
+./rapl_tdp
+```
