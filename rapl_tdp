@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+#
+# Exibir TDP (Consumo em Watt), baseado no mangohud
+# nidobrcontato@gmail.com
+#
+
+# Energia total consumida pela CPU
+F_TDP="/sys/class/powercap/intel-rapl:0/energy_uj"
+
+# Intervalo de atualização
+TIME_INTERVAL=1
+
+[[ -r "${F_TDP}" ]] && {
+	# Valor previo do "energy_uj"
+	P_TDP=$(cat "${F_TDP}")
+} || printf '%s\n' "Erro! \"${F_TDP}\" precisa de permissão de leitura"
+
+# Espera N segundos para tirar a diferença entre dois valores do "energy_uj"
+sleep "${TIME_INTERVAL}"
+
+while true;do
+	# Valor atual do "energy_uj", depois de N segundos
+	C_TDP=$(cat "${F_TDP}")
+
+	# Trata overflow (contador circular), o "energy_uj" depois de um tempo zera e recomeça.
+	[[ "${C_TDP}" -lt "${P_TDP}" ]] && {
+		P_TDP="${C_TDP}"
+		# Espera N segundos para tirar a diferença entre dois valores do "energy_uj"
+		sleep "${TIME_INTERVAL}"
+		continue
+	}
+
+	# Diferença entre o valor atual e o previo
+	D_TDP=$((C_TDP - P_TDP))
+	# Define a quantidade de casa decimal para uma, converte µJ → J e por fim divide pelo tempo definido
+	TDP=$(bc <<< "scale=1; ${D_TDP} / 1000000 / ${TIME_INTERVAL}")
+
+	echo -ne "\rCPU Package Power: ${TDP} W   "
+
+	# Atualiza para o proximo cauculo
+	P_TDP="${C_TDP}"
+	sleep "${TIME_INTERVAL}"
+done
